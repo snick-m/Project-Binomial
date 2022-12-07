@@ -11,6 +11,7 @@
 class Servo {
   private:
     int _index, _low, _high;
+    float _position = -1, _target;
 
     int pulseWidth(int angle) {
       int pulse_wide, analog_value;
@@ -23,6 +24,10 @@ class Servo {
     Servo(int index, int low, int high);
 
     void write(int angle);
+    void writeDelta(int dAngle) {
+      _target = _position + dAngle;
+    };
+    void update();
 
     static void init_pca();
     int getIndex() {
