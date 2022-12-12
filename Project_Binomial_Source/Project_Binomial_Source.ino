@@ -1,18 +1,27 @@
+// Debug Defines
+
+#define SERVO_D 1
+//#define MPU_D
+
+#include <Wire.h>
+
+// Servo Imports
 #include "PCA_Control.h"
 
-Servo HipL = Servo(0, 0, 180); // Servo(slot, low_limit, high_limit);
-Servo KneeL = Servo(1, 55, 90); // Servo(slot, low_limit, high_limit);
-
-
-// Basic demo for accelerometer readings from Adafruit MPU6050
-
+// MPU Imports
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
-#include <Wire.h>
+
+// Joint Definitions : Servo(slot_index, low_limit, high_limit)
+
+Servo HipL = Servo(0, 0, 180);
+Servo KneeL = Servo(1, 20, 180);
+Servo HipR = Servo(2, 0, 180);
+Servo KneeR = Servo(3, 0, 180);
 
 Adafruit_MPU6050 mpu;
 
-float x = 0, y = 0, z = 9.8, x_off = 0, y_off = 0, z_off = 0;
+float x = 0, y = 0, z = 9.8, x_off = 0, y_off = 0, z_off = 0; // accelerometer value stores and thresholds
 
 #define LOOP_FREQ 100
 #define ZERO_PIN D6
@@ -22,7 +31,7 @@ void setup() {
   while (!Serial)
     delay(10); // will pause Zero, Leonardo, etc until serial console opens
 
-//  Serial.println("Adafruit MPU6050 test!");
+  //  Serial.println("Adafruit MPU6050 test!");
 
   // Try to initialize!
   if (!mpu.begin()) {
@@ -37,37 +46,59 @@ void setup() {
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
- 
+
   Servo::init_pca();
 
   pinMode(ZERO_PIN, INPUT_PULLUP);
   attachInterrupt(ZERO_PIN, setAccOffset, RISING);
+
+  delay(500); // Skip through initial Serial burst from Nodemcu
+  Serial.println("\nCLEAR\n\n");
 }
 
 void loop() {
   if (Serial.available()) {
-    int cmd = Serial.parseInt();
-    int idx = cmd / 1000;
-    int val = cmd % 1000;
+    int idx = Serial.read() - 48;
+    int val = 0;
 
-    Serial.print(idx);
-    Serial.print(' ');
-    Serial.println(val);
-
-    switch(idx) {
+    while (Serial.available()) {
+      val *= 10;
+      val += Serial.read() - 48;
+    }
+    
+    switch (idx) {
       case 0:
+        Serial.print("HL");
+
         HipL.write(val);
         break;
       case 1:
+        Serial.print("KL");
+
         KneeL.write(val);
         break;
+      case 2:
+        Serial.print("HR");
+
+        HipR.write(val);
+        break;
+      case 3:
+        Serial.print("KR");
+
+        KneeR.write(val);
+        break;
     }
-//    
-//    KneeL.write(Serial.parseInt());
+
+    Serial.print(' ');
+    Serial.println(val);
+    //
+    //    KneeL.write(Serial.parseInt());
   }
 
   HipL.update();
   KneeL.update();
+  HipR.update();
+  KneeR.update();
 
 
   // MPU Code
@@ -77,59 +108,62 @@ void loop() {
   mpu.getEvent(&a, &g, &temp);
 
   /*
-  
-  // Used when Averaging n readings; Need to make it concurrent.
-  
-  float x_sum, y_sum, z_sum;
-  
-  for (int i = 0; i < 10; i++) {
+
+    // Used when Averaging n readings; Need to make it concurrent.
+
+    float x_sum, y_sum, z_sum;
+
+    for (int i = 0; i < 10; i++) {
     mpu.getEvent(&a, &g, &temp);
-  
+
     x = a.acceleration.x * 0.2 + x * 0.8;
     y = a.acceleration.y * 0.2 + y * 0.8;
     z = a.acceleration.z * 0.2 + z * 0.8;
-  
+
     x_sum += x;
     y_sum += y;
     z_sum += z;
-  
+
     delay(5);
-  }
-  
-  x = x_sum / 10;
-  y = y_sum / 10;
-  z = z_sum / 10;
-  
+    }
+
+    x = x_sum / 10;
+    y = y_sum / 10;
+    z = z_sum / 10;
+
   */
 
   x = (a.acceleration.x + x_off) * 0.1 + x * 0.9;
   y = (a.acceleration.y + y_off) * 0.1 + y * 0.9;
   z = (a.acceleration.z + z_off) * 0.1 + z * 0.9;
 
+
+  float correction = x * -1 * 25;
+
+#ifdef MPU_D
+
   Serial.print("X: ");
-  
-//  if (abs(x) < 0.1) x = 0;
 
   Serial.print(x);
 
-  float correction = x * -1 * 25;
-  
   Serial.print(", Correction: ");
   Serial.println(correction);
 
-
-//  Serial.println((int)(1000.0 / LOOP_FREQ));
-//  delay((int)(1000.0 / LOOP_FREQ)); // Run Loop at roughly LOOP_FREQ
+#endif
 
 
-//  Serial.print("X: ");
-//  Serial.print(x);
-//  Serial.print(", Y: ");
-//  Serial.print(y);
-//  Serial.print(", Z: ");
-//  Serial.print(z);
-//
-//  Serial.println("");
+  //  Serial.println((int)(1000.0 / LOOP_FREQ));
+  //  delay((int)(1000.0 / LOOP_FREQ)); // Run Loop at roughly LOOP_FREQ
+
+
+  //  Serial.print("X: ");
+  //  Serial.print(x);
+  //  Serial.print(", Y: ");
+  //  Serial.print(y);
+  //  Serial.print(", Z: ");
+  //  Serial.print(z);
+  //
+  //  Serial.println("");
 }
 
 ICACHE_RAM_ATTR void setAccOffset() {

@@ -4,14 +4,14 @@
 #include "Wire.h"
 #include "Adafruit_PWMServoDriver.h"
 
-#define MIN_PULSE_WIDTH 500
+#define MIN_PULSE_WIDTH 900
 #define MAX_PULSE_WIDTH 1950
 #define FREQUENCY 50
 
 class Servo {
   private:
     int _index, _low, _high;
-    float _position = -1, _target;
+    float _position = -1, _target = 0;
 
     int pulseWidth(int angle) {
       int pulse_wide, analog_value;

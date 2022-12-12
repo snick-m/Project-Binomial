@@ -20,7 +20,7 @@ void Servo::write(int angle) {
     for (int i = 1; i <= 50; i++) {
       int val = (float)angle * -(cos(PI * (float)i / 50) - 1) / 2;
       pwm.setPWM(_index, 0, pulseWidth(val));
-      delay(1);
+      delay(20);
     }
     
     _position = angle;
@@ -34,9 +34,13 @@ void Servo::write(int angle) {
 void Servo::update() { // Update servo position on main loop.
   if (_position != _target) {
     _position = (int)round(_target * 0.035 + _position * 0.965); // 3.5% of Target, 96.5% of Current
-//    char buff[30];
-//    sprintf(buff, "Target: %2f\tPosition: %2f\tDelta: %2f", _target, _position, _target * 0.1 + _position * 0.9);
-//    Serial.println(buff);
+    
+    #ifdef SERVO_D
+    char buff[30];
+    sprintf(buff, "Servo: %d\tTarget: %2f\tPosition: %2f\tDelta: %2f", _index, _target, _position, _target * 0.1 + _position * 0.9);
+    Serial.println(buff);
+    #endif
+    
     pwm.setPWM(_index, 0, pulseWidth(_position));
     delay(10); // TODO: Decide on Loop Frequency handling in library vs main loop.
   }
