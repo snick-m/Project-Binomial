@@ -1,12 +1,13 @@
-// Debug Defines
+// Debug modes
 
-#define SERVO_D 1
-//#define MPU_D
+const static bool SERVO_D = true;
+//const static bool MPU_D = true;
 
 #include <Wire.h>
 
-// Servo Imports
+// Custom Imports
 #include "PCA_Control.h"
+#include "Control_Server.h"
 
 // MPU Imports
 #include <Adafruit_MPU6050.h>
@@ -14,24 +15,27 @@
 
 // Joint Definitions : Servo(slot_index, low_limit, high_limit)
 
-Servo HipL = Servo(0, 0, 180);
-Servo KneeL = Servo(1, 20, 180);
-Servo HipR = Servo(2, 0, 180);
-Servo KneeR = Servo(3, 0, 180);
+Servo HipL = Servo(0, 0, 180); // 0-170
+Servo KneeL = Servo(1, 20, 180); // 20-180
+Servo HipR = Servo(2, 0, 180); // 0-170
+Servo KneeR = Servo(3, 0, 180); // 20-180
 
 Adafruit_MPU6050 mpu;
 
 float x = 0, y = 0, z = 9.8, x_off = 0, y_off = 0, z_off = 0; // accelerometer value stores and thresholds
 
 #define LOOP_FREQ 100
-#define ZERO_PIN D6
+#define ZERO_PIN 0
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("BEGIN");
   while (!Serial)
     delay(10); // will pause Zero, Leonardo, etc until serial console opens
 
   //  Serial.println("Adafruit MPU6050 test!");
+
+  controlSetup();
 
   // Try to initialize!
   if (!mpu.begin()) {
@@ -47,10 +51,10 @@ void setup() {
 
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 
-  Servo::init_pca();
-
   pinMode(ZERO_PIN, INPUT_PULLUP);
   attachInterrupt(ZERO_PIN, setAccOffset, RISING);
+  
+  Servo::init_pca();
 
   delay(500); // Skip through initial Serial burst from Nodemcu
   Serial.println("\nCLEAR\n\n");
@@ -137,8 +141,9 @@ void loop() {
   y = (a.acceleration.y + y_off) * 0.1 + y * 0.9;
   z = (a.acceleration.z + z_off) * 0.1 + z * 0.9;
 
-
   float correction = x * -1 * 25;
+
+  controlLoop();
 
 #ifdef MPU_D
 
