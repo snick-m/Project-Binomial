@@ -10,7 +10,7 @@
 
 class Servo {
   private:
-    int _index, _low, _high;
+    int _index, _low, _high, _initial;
     float _position = -1, _target = 0;
 
     int pulseWidth(int angle) {
@@ -21,7 +21,7 @@ class Servo {
     }
 
   public:
-    Servo(int index, int low, int high);
+    Servo(int index, int low, int high, int initial);
 
     void write(int angle);
     void writeDelta(int dAngle) {

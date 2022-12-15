@@ -7,7 +7,7 @@ const static bool SERVO_D = true;
 
 // Custom Imports
 #include "PCA_Control.h"
-#include "Control_Server.h"
+//#include "Control_Server.h"
 
 // MPU Imports
 #include <Adafruit_MPU6050.h>
@@ -15,10 +15,10 @@ const static bool SERVO_D = true;
 
 // Joint Definitions : Servo(slot_index, low_limit, high_limit)
 
-Servo HipL = Servo(0, 0, 180); // 0-170
-Servo KneeL = Servo(1, 20, 180); // 20-180
-Servo HipR = Servo(2, 0, 180); // 0-170
-Servo KneeR = Servo(3, 0, 180); // 20-180
+Servo HipR = Servo(0, 0, 170, 120); // 0-170
+Servo KneeR = Servo(1, 0, 180, 100); // 0-180
+Servo HipL = Servo(2, 0, 170, 0); // 0-170
+Servo KneeL = Servo(3, 0, 180, 0); // 0-180
 
 Adafruit_MPU6050 mpu;
 
@@ -35,7 +35,7 @@ void setup() {
 
   //  Serial.println("Adafruit MPU6050 test!");
 
-  controlSetup();
+//  controlSetup();
 
   // Try to initialize!
   if (!mpu.begin()) {
@@ -71,22 +71,22 @@ void loop() {
     }
     
     switch (idx) {
-      case 0:
+      case 2:
         Serial.print("HL");
 
         HipL.write(val);
         break;
-      case 1:
+      case 3:
         Serial.print("KL");
 
         KneeL.write(val);
         break;
-      case 2:
+      case 0:
         Serial.print("HR");
 
         HipR.write(val);
         break;
-      case 3:
+      case 1:
         Serial.print("KR");
 
         KneeR.write(val);
@@ -143,7 +143,7 @@ void loop() {
 
   float correction = x * -1 * 25;
 
-  controlLoop();
+//  controlLoop();
 
 #ifdef MPU_D
 
